@@ -1,0 +1,11 @@
+{
+    "extName":{
+        "message":"Return Facebook Likes"
+    },
+    "extShortName":{
+        "message":"FB Likes"
+    },
+    "extDescription":{
+        "message":"Restores comment reaction counts on Facebook website (desktop)."
+    }
+}

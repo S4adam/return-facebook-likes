@@ -1,0 +1,23 @@
+# Ignore packed extension zip files
+*.zip
+*.crx
+
+# macOS junk
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows junk
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# WebStorm / PhpStorm / IntelliJ
+.idea/
+
+.env
