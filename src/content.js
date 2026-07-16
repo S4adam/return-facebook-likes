@@ -7,6 +7,7 @@
     const SCAN_SELECTOR = `${TOOLBAR_SELECTOR}, ${BUTTON_SELECTOR}`;
     const ACTION_BUTTON_EXCLUDE_SELECTOR = '[data-ad-rendering-role], i[data-visualcompletion="css-img"]';
 
+
     if (window.__fbLikesRestorer?.observer) {
         try { window.__fbLikesRestorer.observer.disconnect(); } catch (_) { }
     }
@@ -44,18 +45,49 @@
         return format(n / 1e9, 'b');
     }
 
-    function makeSpan(text) {
+    function makeSpan(text, isPost) {
         const span = document.createElement('span');
         span.className = INJECTED_CLASS;
-        span.style.cssText = 'color:var(--secondary-text,#65676b);font-size:.8125rem;font-weight:600;margin-left:6px;display:inline-flex;align-items:center;pointer-events:none;user-select:none;white-space:nowrap;line-height:1;';
+
+        const baseStyle = 'display:inline-flex;align-items:center;pointer-events:none;user-select:none;white-space:nowrap;-webkit-font-smoothing:antialiased;font-family:inherit;';
+
+        const contextStyle = isPost
+            ? 'color:var(--secondary-text,#8a8d91);font-size:.9375rem;font-weight:400;line-height:1.3333;margin-left:3px;'
+            : 'color:var(--secondary-text,#65676b);font-size:.8125rem;font-weight:600;line-height:1;margin-left:3px;';
+
+        span.style.cssText = baseStyle + contextStyle;
         span.textContent = text;
         return span;
     }
 
-    function attachCount(el, total) {
+    function attachCount(el, total, isPost) {
         el.style.display = el.style.display || 'inline-flex';
         el.style.alignItems = el.style.alignItems || 'center';
-        el.appendChild(makeSpan(formatCount(total)));
+
+        if (!isPost) {
+            el.style.setProperty('justify-content', 'flex-start', 'important');
+            el.style.setProperty('gap', '0px', 'important');
+        }
+
+        el.appendChild(makeSpan(formatCount(total), isPost));
+    }
+
+    function updateInjectedCount(el, count, isPost) {
+        const existingSpan = el.querySelector(`.${INJECTED_CLASS}`);
+
+        if (count === null) {
+            if (existingSpan) existingSpan.remove();
+            return;
+        }
+
+        const formatted = formatCount(count);
+        if (existingSpan) {
+            if (existingSpan.textContent !== formatted) {
+                existingSpan.textContent = formatted;
+            }
+        } else {
+            attachCount(el, count, isPost);
+        }
     }
 
     const isActionButton = (el) => !!el.querySelector(ACTION_BUTTON_EXCLUDE_SELECTOR) || !!el.closest('[data-ad-rendering-role]');
@@ -76,13 +108,9 @@
         if (isMenuButton(el)) return false;
         if (isActionButton(el)) return false;
 
-        // Structural Punctuation Check:
-        // Standalone comment reaction buttons use a colon or semicolon (standard or full-width) 
-        // to isolate counts/summaries from descriptions/actions.
         return /[:;\uFF1A\uFF1B]/.test(label);
     }
 
-    // detect already-visible numbers inside an element
     function hasVisibleCountInside(el) {
         const candidates = el.querySelectorAll('[role="none"], span, div');
         for (let i = 0; i < candidates.length; i++) {
@@ -102,7 +130,6 @@
         return false;
     }
 
-    // detect if Facebook natively renders the count nearby
     function hasVisibleCountNearby(toolbar) {
         const container = toolbar.parentElement;
         if (!container) return false;
@@ -120,12 +147,9 @@
         return false;
     }
 
-    // Shape 1: Post Reaction Bar
     function processToolbar(toolbar) {
-        const existingSpan = toolbar.querySelector(`.${INJECTED_CLASS}`);
-
         if (isInsideChat(toolbar) || isActionButton(toolbar) || hasVisibleCountNearby(toolbar) || hasVisibleCountInside(toolbar)) {
-            if (existingSpan) existingSpan.remove();
+            updateInjectedCount(toolbar, null, true);
             return;
         }
 
@@ -142,44 +166,17 @@
             }
         }
 
-        if (!found) {
-            if (existingSpan) existingSpan.remove();
-            return;
-        }
-
-        const formatted = formatCount(total);
-        if (existingSpan) {
-            if (existingSpan.textContent !== formatted) {
-                existingSpan.textContent = formatted;
-            }
-        } else {
-            attachCount(toolbar, total);
-        }
+        updateInjectedCount(toolbar, found ? total : null, true);
     }
 
-    // Shape 2: Standalone Comment Summary Button
     function processStandaloneButton(btn) {
-        const existingSpan = btn.querySelector(`.${INJECTED_CLASS}`);
-
         if (btn.closest(TOOLBAR_SELECTOR) || !isValidCommentReaction(btn) || hasVisibleCountInside(btn)) {
-            if (existingSpan) existingSpan.remove();
+            updateInjectedCount(btn, null, false);
             return;
         }
 
         const raw = parseCount(btn.getAttribute('aria-label'));
-        if (raw === null) {
-            if (existingSpan) existingSpan.remove();
-            return;
-        }
-
-        const formatted = formatCount(raw);
-        if (existingSpan) {
-            if (existingSpan.textContent !== formatted) {
-                existingSpan.textContent = formatted;
-            }
-        } else {
-            attachCount(btn, raw);
-        }
+        updateInjectedCount(btn, raw, false);
     }
 
     function processNode(el) {
@@ -191,7 +188,6 @@
             }
         } catch (_) { }
     }
-
 
     const pendingRoots = new Set();
     let flushTimer = null;

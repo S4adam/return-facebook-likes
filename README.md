@@ -17,8 +17,8 @@ Simple, fully local, requires zero API permissions, and has zero tracking, zero 
 
 ## Key Features
 
-* Instantly restores aggregate reaction counts on individual comments.
-* Shows summed reaction totals on posts where the author has hidden the public count via Facebook's "Reaction Preferences."
+* Restores reaction counts on post comments.
+* Shows total reactions on posts even if the author has chosen to hide the public reaction count.
 * Appends numbers inside the native button layout, keeping the click target active so you can still click the count to see *who* reacted.
 * It *should* work out of the box in multiple languages as it relies on structural punctuation so e.g. "1,5 tys." (PL) and "1.5K" (EN) are both accurately treated the same.
 * No heavy event listeners. The entire extension operates on a single `childList` observer.
@@ -26,7 +26,7 @@ Simple, fully local, requires zero API permissions, and has zero tracking, zero 
 ## Permissions & Privacy
 This extension requires **zero browser API permissions**. 
 
-While Chrome will display a warning saying the extension can *"Read and change your data on facebook.com"*, this is strictly because the extension must be able to insert the numbers into Facebook's page source.
+While the browser might display a warning saying the extension can *"Read and change your data on facebook.com"*, this is strictly because the extension must be able to insert the numbers into Facebook's page source.
 
 ## Installation
 
