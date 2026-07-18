@@ -6,6 +6,12 @@
   "description": "__MSG_extDescription__",
   "default_locale": "en",
   "minimum_chrome_version": "109.0.0.0",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "return-facebook-likes@s4adam",
+      "strict_min_version": "109.0"
+    }
+  },
   "icons": {
     "16": "assets/icons/icon-16.png",
     "32": "assets/icons/icon-32.png",
