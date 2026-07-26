@@ -2,240 +2,243 @@
     'use strict';
 
     const INJECTED_CLASS = 'fb-restored-count';
-    const TOOLBAR_SELECTOR = 'span[role="toolbar"]';
-    const BUTTON_SELECTOR = 'div[role="button"][aria-label]';
-    const SCAN_SELECTOR = `${TOOLBAR_SELECTOR}, ${BUTTON_SELECTOR}`;
-    const ACTION_BUTTON_EXCLUDE_SELECTOR = '[data-ad-rendering-role], i[data-visualcompletion="css-img"]';
+    let scannedFibers = new WeakMap();
 
+    let currentSettings = {
+        restoreCommentCounts: true,
+        useExactNumbers: false,
+        commentFontSize: '0.81',
+        commentFontWeight: '600'
+    };
+
+    let readyInterval = setInterval(() => {
+        window.postMessage({ type: 'FB_LIKES_CONTENT_READY' }, '*');
+    }, 250);
+
+    window.addEventListener('message', (event) => {
+        if (event.data?.type === 'FB_LIKES_SETTINGS_UPDATE') {
+            clearInterval(readyInterval);
+
+            const prevRestore = currentSettings.restoreCommentCounts;
+            currentSettings = { ...currentSettings, ...event.data.settings };
+
+            scannedFibers = new WeakMap();
+
+            if (prevRestore && !currentSettings.restoreCommentCounts) {
+                document.querySelectorAll(`.${INJECTED_CLASS}`).forEach(el => el.remove());
+            } else if (currentSettings.restoreCommentCounts) {
+                scanFullTree();
+            }
+        }
+    });
 
     if (window.__fbLikesRestorer?.observer) {
         try { window.__fbLikesRestorer.observer.disconnect(); } catch (_) { }
     }
 
-    function parseCount(label) {
-        if (!label) return null;
-        const match = label.match(/(\d[\d.,\s\u00A0]*\d|\d)\s*(\p{L}{1,4}\.?)?/u);
-        if (!match) return null;
-
-        const numStr = match[1].replace(/[\s\u00A0]/g, '');
-        const suffix = (match[2] || '').toLowerCase().replace(/\.$/, '');
-
-        const multMap = {
-            k: 1e3, tys: 1e3, tis: 1e3,
-            m: 1e6, mln: 1e6, mil: 1e6,
-            b: 1e9, mld: 1e9, bn: 1e9
-        };
-        const mult = multMap[suffix] || 1;
-
-        if (mult === 1) return parseInt(numStr.replace(/\D/g, ''), 10) || null;
-
-        const lastSep = Math.max(numStr.lastIndexOf(','), numStr.lastIndexOf('.'));
-        if (lastSep === -1) return Math.round(parseInt(numStr, 10) * mult);
-
-        const intPart = numStr.slice(0, lastSep).replace(/[.,]/g, '');
-        const fracPart = numStr.slice(lastSep + 1);
-        return Math.round(parseFloat(`${intPart}.${fracPart}`) * mult);
-    }
-
     function formatCount(n) {
+        if (currentSettings.useExactNumbers) return n.toLocaleString();
         if (n < 1000) return String(n);
         const format = (val, suffix) => (Math.round(val * 10) / 10).toFixed(1).replace(/\.0$/, '') + suffix;
-        if (n < 999950) return format(n / 1000, 'k');
-        if (n < 999950000) return format(n / 1e6, 'm');
-        return format(n / 1e9, 'b');
+        if (n < 999950) return format(n / 1000, 'K');
+        if (n < 999950000) return format(n / 1e6, 'M');
+        return format(n / 1e9, 'B');
     }
 
-    function makeSpan(text, isPost) {
-        const span = document.createElement('span');
-        span.className = INJECTED_CLASS;
-
-        const baseStyle = 'display:inline-flex;align-items:center;pointer-events:none;user-select:none;white-space:nowrap;-webkit-font-smoothing:antialiased;font-family:inherit;';
-
-        const contextStyle = isPost
-            ? 'color:var(--secondary-text,#8a8d91);font-size:.9375rem;font-weight:400;line-height:1.3333;margin-left:3px;'
-            : 'color:var(--secondary-text,#65676b);font-size:.8125rem;font-weight:600;line-height:1;margin-left:3px;';
-
-        span.style.cssText = baseStyle + contextStyle;
-        span.textContent = text;
-        return span;
+    function getDOMNodeFromFiber(fiber) {
+        if (!fiber) return null;
+        if (fiber.tag === 5 && fiber.stateNode instanceof Element) {
+            return fiber.stateNode;
+        }
+        let child = fiber.child;
+        while (child) {
+            const node = getDOMNodeFromFiber(child);
+            if (node) return node;
+            child = child.sibling;
+        }
+        return null;
     }
 
-    function attachCount(el, total, isPost) {
-        el.style.display = el.style.display || 'inline-flex';
-        el.style.alignItems = el.style.alignItems || 'center';
+    let cachedReactSuffix = null;
 
-        if (!isPost) {
-            el.style.setProperty('justify-content', 'flex-start', 'important');
-            el.style.setProperty('gap', '0px', 'important');
+    function getReactSuffix() {
+        const rootEl = document.querySelector('[id^="mount_"]');
+        if (!rootEl) return null;
+
+        if (cachedReactSuffix && rootEl['__reactContainer' + cachedReactSuffix]) {
+            return cachedReactSuffix;
         }
 
-        el.appendChild(makeSpan(formatCount(total), isPost));
+        const containerKey = Object.keys(rootEl).find(k => k.startsWith('__reactContainer'));
+        if (containerKey) {
+            cachedReactSuffix = containerKey.split('__reactContainer')[1];
+            return cachedReactSuffix;
+        }
+        return null;
     }
 
-    function updateInjectedCount(el, count, isPost) {
-        const existingSpan = el.querySelector(`.${INJECTED_CLASS}`);
+    function getFiberFromDOM(domNode) {
+        const suffix = getReactSuffix();
+        if (!suffix) return null;
 
-        if (count === null) {
-            if (existingSpan) existingSpan.remove();
+        const fiberKey = '__reactFiber' + suffix;
+        const containerKey = '__reactContainer' + suffix;
+
+        let curr = domNode;
+        let depth = 0;
+
+        while (curr && depth < 12) {
+            if (curr[fiberKey]) return curr[fiberKey];
+            if (curr[containerKey]) return curr[containerKey];
+            curr = curr.parentElement;
+            depth++;
+        }
+        return null;
+    }
+
+    function attachCountToDOM(domNode, total) {
+        const btn = domNode.closest('div[role="button"]') || domNode.querySelector('div[role="button"]') || domNode;
+        let span = btn.querySelector(`.${INJECTED_CLASS}`);
+
+        if (!currentSettings.restoreCommentCounts) {
+            if (span) span.remove();
             return;
         }
 
-        const formatted = formatCount(count);
-        if (existingSpan) {
-            if (existingSpan.textContent !== formatted) {
-                existingSpan.textContent = formatted;
-            }
+        const formatted = formatCount(total);
+
+        if (span) {
+            if (span.textContent !== formatted) span.textContent = formatted;
+            span.style.fontSize = `${currentSettings.commentFontSize}rem`;
+            span.style.fontWeight = currentSettings.commentFontWeight;
         } else {
-            attachCount(el, count, isPost);
+            span = document.createElement('span');
+            span.className = INJECTED_CLASS;
+            span.style.cssText = `display:inline-flex;align-items:center;pointer-events:none;user-select:none;white-space:nowrap;-webkit-font-smoothing:antialiased;font-family:inherit;color:var(--secondary-text,#b0b3b8);font-size:${currentSettings.commentFontSize}rem;font-weight:${currentSettings.commentFontWeight};line-height:1;margin-left:4px;`;
+            span.textContent = formatted;
+
+            btn.style.display = btn.style.display || 'inline-flex';
+            btn.style.alignItems = btn.style.alignItems || 'center';
+            btn.appendChild(span);
         }
     }
 
-    const isActionButton = (el) => !!el.querySelector(ACTION_BUTTON_EXCLUDE_SELECTOR) || !!el.closest('[data-ad-rendering-role]');
-    const isMenuButton = (el) => el.hasAttribute('aria-haspopup') || el.hasAttribute('aria-expanded');
+    function scanSubtree(startFiber) {
+        if (!currentSettings.restoreCommentCounts || !startFiber) return;
 
-    function isInsideChat(el) {
-        if (location.hostname.includes('messenger.com') || location.pathname.includes('/messages')) {
-            return true;
-        }
-        return !!el.closest('[role="grid"], [data-pagelet*="Chat"], [data-testid="chat-tab"], [aria-label="Messenger"], [aria-label="Czat"]');
-    }
+        let curr = startFiber;
 
-    function isValidCommentReaction(el) {
-        const label = el.getAttribute('aria-label');
-        if (!label || !/\d/.test(label)) return false;
+        while (curr) {
+            let skipChild = false;
+            let totalReactions = 0;
 
-        if (isInsideChat(el)) return false;
-        if (isMenuButton(el)) return false;
-        if (isActionButton(el)) return false;
+            try {
+                const props = curr.memoizedProps;
+                if (props) {
+                    const topReactions = props.topReactions || props.commentData?.top_reactions?.edges;
+                    const feedback = props.feedback || props.commentData?.feedback;
 
-        return /[:;\uFF1A\uFF1B]/.test(label);
-    }
-
-    function hasVisibleCountInside(el) {
-        const candidates = el.querySelectorAll('[role="none"], span, div');
-        for (let i = 0; i < candidates.length; i++) {
-            const node = candidates[i];
-            if (node.classList.contains(INJECTED_CLASS)) continue;
-
-            let ownText = '';
-            for (let j = 0; j < node.childNodes.length; j++) {
-                const child = node.childNodes[j];
-                if (child.nodeType === 3) ownText += child.nodeValue;
+                    if (topReactions && Array.isArray(topReactions)) {
+                        totalReactions = topReactions.reduce((sum, r) => sum + (r.reactionCount || r.node?.reaction_count || 0), 0);
+                    } else if (feedback && feedback.reaction_count) {
+                        totalReactions = feedback.reaction_count.count || feedback.reaction_count || 0;
+                    }
+                }
+            } catch (err) {
+                console.debug('[FB Likes] Data schema extraction failed:', err.message);
             }
-            ownText = ownText.trim();
-            if (ownText && /^\d[\d.,\u00A0]*$/.test(ownText)) {
-                return true;
+
+            if (totalReactions > 0) {
+                skipChild = true;
+
+                if (scannedFibers.get(curr) !== totalReactions) {
+                    try {
+                        const domNode = getDOMNodeFromFiber(curr);
+                        if (domNode && document.body.contains(domNode)) {
+                            attachCountToDOM(domNode, totalReactions);
+                            scannedFibers.set(curr, totalReactions);
+                        }
+                    } catch (err) {
+                        console.debug('[FB Likes] DOM attach failed:', err.message);
+                    }
+                }
             }
-        }
-        return false;
-    }
 
-    function hasVisibleCountNearby(toolbar) {
-        const container = toolbar.parentElement;
-        if (!container) return false;
-
-        const candidates = container.querySelectorAll('span');
-        for (let i = 0; i < candidates.length; i++) {
-            const el = candidates[i];
-            if (toolbar.contains(el) || el.contains(toolbar)) continue;
-            if (el.querySelector('span[role="toolbar"], div[role="button"]')) continue;
-            const text = el.textContent || '';
-            if (/\d/.test(text) && text.trim().length < 80) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    function processToolbar(toolbar) {
-        if (isInsideChat(toolbar) || isActionButton(toolbar) || hasVisibleCountNearby(toolbar) || hasVisibleCountInside(toolbar)) {
-            updateInjectedCount(toolbar, null, true);
-            return;
-        }
-
-        const buttons = toolbar.querySelectorAll(BUTTON_SELECTOR);
-        let total = 0, found = false;
-
-        for (let i = 0; i < buttons.length; i++) {
-            const btn = buttons[i];
-            if (isActionButton(btn) || isMenuButton(btn)) continue;
-            const raw = parseCount(btn.getAttribute('aria-label'));
-            if (raw !== null) {
-                total += raw;
-                found = true;
+            if (!skipChild && curr.child) {
+                curr = curr.child;
+            } else {
+                if (curr === startFiber) break;
+                while (curr && !curr.sibling) {
+                    curr = curr.return;
+                    if (curr === startFiber || !curr) return;
+                }
+                if (curr) curr = curr.sibling;
             }
         }
-
-        updateInjectedCount(toolbar, found ? total : null, true);
     }
 
-    function processStandaloneButton(btn) {
-        if (btn.closest(TOOLBAR_SELECTOR) || !isValidCommentReaction(btn) || hasVisibleCountInside(btn)) {
-            updateInjectedCount(btn, null, false);
-            return;
+    function scanFullTree() {
+        const rootEl = document.querySelector('[id^="mount_"]');
+        if (rootEl) {
+            const containerKey = Object.keys(rootEl).find(k => k.startsWith('__reactContainer'));
+            if (containerKey) scanSubtree(rootEl[containerKey]);
         }
-
-        const raw = parseCount(btn.getAttribute('aria-label'));
-        updateInjectedCount(btn, raw, false);
     }
 
-    function processNode(el) {
-        try {
-            if (el.matches(TOOLBAR_SELECTOR)) {
-                processToolbar(el);
-            } else if (el.matches(BUTTON_SELECTOR)) {
-                processStandaloneButton(el);
-            }
-        } catch (_) { }
-    }
-
-    const pendingRoots = new Set();
-    let flushTimer = null;
-
-    function flush() {
-        flushTimer = null;
-        if (!pendingRoots.size) return;
-
-        const roots = Array.from(pendingRoots).filter(node => node.isConnected);
-        pendingRoots.clear();
-
-        const topRoots = roots.filter(node => !roots.some(other => other !== node && other.contains(node)));
-        const targets = new Set();
-
-        topRoots.forEach(root => {
-            if (root.matches(SCAN_SELECTOR)) targets.add(root);
-            root.querySelectorAll(SCAN_SELECTOR).forEach(el => targets.add(el));
-        });
-
-        targets.forEach(processNode);
-    }
+    let scanTimeout = null;
 
     const observer = new MutationObserver((mutations) => {
+        if (!currentSettings.restoreCommentCounts) return;
+
+        let fibersToScan = new Set();
+        let needsRootFallback = false;
+
         for (let i = 0; i < mutations.length; i++) {
             const added = mutations[i].addedNodes;
             for (let j = 0; j < added.length; j++) {
                 const node = added[j];
-                if (node.nodeType === 1 && !node.classList.contains(INJECTED_CLASS)) {
-                    pendingRoots.add(node);
+                if (node.nodeType === 1) {
+                    const fiber = getFiberFromDOM(node);
+                    if (fiber) {
+                        fibersToScan.add(fiber);
+                    } else {
+                        if (node.matches('div[role="button"]') || node.querySelector('div[role="button"]')) {
+                            needsRootFallback = true;
+                        }
+                    }
                 }
             }
         }
-        if (pendingRoots.size && !flushTimer) {
-            flushTimer = setTimeout(() => requestAnimationFrame(flush), 150);
+
+        if (needsRootFallback) {
+            const rootEl = document.querySelector('[id^="mount_"]');
+            if (rootEl) {
+                const containerKey = Object.keys(rootEl).find(k => k.startsWith('__reactContainer'));
+                if (containerKey && rootEl[containerKey]) {
+                    fibersToScan.add(rootEl[containerKey]);
+                }
+            }
+        }
+
+        if (fibersToScan.size > 0) {
+            if (scanTimeout) clearTimeout(scanTimeout);
+            scanTimeout = setTimeout(() => {
+                requestAnimationFrame(() => {
+                    fibersToScan.forEach(f => scanSubtree(f));
+                });
+            }, 150);
         }
     });
 
-    function startObserving() {
+    function init() {
         if (!document.body) {
-            requestAnimationFrame(startObserving);
+            requestAnimationFrame(init);
             return;
         }
         observer.observe(document.body, { childList: true, subtree: true });
         window.__fbLikesRestorer = { observer };
-
-        pendingRoots.add(document.body);
-        flush();
+        scanFullTree();
     }
 
-    startObserving();
+    init();
 })();

@@ -1,11 +1,50 @@
 {
-    "extName":{
-        "message":"Return Facebook Likes"
+    "extName": {
+        "message": "Return Facebook Likes"
     },
-    "extShortName":{
-        "message":"FB Likes"
+    "extShortName": {
+        "message": "FB Likes"
     },
-    "extDescription":{
-        "message":"Restores comment reaction counts on Facebook website (desktop)."
+    "extDescription": {
+        "message": "Restores comment reaction counts on Facebook website (desktop)."
+    },
+    "extSettingsTitle": {
+        "message": "Return Facebook Likes Settings"
+    },
+    "lblRestoreCounts": {
+        "message": "Restore Comment Counts"
+    },
+    "lblExactNumbers": {
+        "message": "Use Exact Numbers (19,269)"
+    },
+    "lblFontSize": {
+        "message": "Font Size"
+    },
+    "lblFontWeight": {
+        "message": "Font Weight"
+    },
+    "btnRevert": {
+        "message": "Revert"
+    },
+    "btnSave": {
+        "message": "Save"
+    },
+    "btnReset": {
+        "message": "Reset to defaults"
+    },
+    "lblHavingTrouble": {
+        "message": "Facebook updated? If so:"
+    },
+    "msgSaved": {
+        "message": "Settings saved!"
+    },
+    "msgReverted": {
+        "message": "Reverted to saved state."
+    },
+    "msgResetDefaults": {
+        "message": "Reset to defaults."
+    },
+    "lnkReportIssue": {
+        "message": "Report an Issue"
     }
 }

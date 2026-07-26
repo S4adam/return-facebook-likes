@@ -1,0 +1,50 @@
+{
+    "extName": {
+        "message": "Khôi phục lượt Thích trên Facebook"
+    },
+    "extShortName": {
+        "message": "FB Likes"
+    },
+    "extDescription": {
+        "message": "Khôi phục số lượng biểu tượng cảm xúc bình luận trên trang web Facebook."
+    },
+    "extSettingsTitle": {
+        "message": "Cài đặt Khôi phục lượt Thích"
+    },
+    "lblRestoreCounts": {
+        "message": "Khôi phục số lượt Thích"
+    },
+    "lblExactNumbers": {
+        "message": "Hiển thị số chính xác (19,269)"
+    },
+    "lblFontSize": {
+        "message": "Cỡ chữ"
+    },
+    "lblFontWeight": {
+        "message": "Độ đậm nhạt"
+    },
+    "btnRevert": {
+        "message": "Hoàn tác"
+    },
+    "btnSave": {
+        "message": "Lưu"
+    },
+    "btnReset": {
+        "message": "Khôi phục mặc định"
+    },
+    "lblHavingTrouble": {
+        "message": "Facebook đã cập nhật? Nếu có:"
+    },
+    "msgSaved": {
+        "message": "Đã lưu cài đặt!"
+    },
+    "msgReverted": {
+        "message": "Đã khôi phục trạng thái ban đầu."
+    },
+    "msgResetDefaults": {
+        "message": "Đã khôi phục mặc định."
+    },
+    "lnkReportIssue": {
+        "message": "Báo cáo sự cố"
+    }
+}

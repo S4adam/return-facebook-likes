@@ -1,0 +1,50 @@
+{
+    "extName": {
+        "message": "Restaurar Me Gusta de Facebook"
+    },
+    "extShortName": {
+        "message": "FB Me Gusta"
+    },
+    "extDescription": {
+        "message": "Restaura el recuento de reacciones en los comentarios de Facebook (escritorio)."
+    },
+    "extSettingsTitle": {
+        "message": "Configuración de Restaurar Me Gusta"
+    },
+    "lblRestoreCounts": {
+        "message": "Restaurar recuento de comentarios"
+    },
+    "lblExactNumbers": {
+        "message": "Usar números exactos (19,269)"
+    },
+    "lblFontSize": {
+        "message": "Tamaño de fuente"
+    },
+    "lblFontWeight": {
+        "message": "Grosor de fuente"
+    },
+    "btnRevert": {
+        "message": "Revertir"
+    },
+    "btnSave": {
+        "message": "Guardar"
+    },
+    "btnReset": {
+        "message": "Restablecer valores predeterminados"
+    },
+    "lblHavingTrouble": {
+        "message": "¿Facebook se actualizó? Si es así:"
+    },
+    "msgSaved": {
+        "message": "¡Configuración guardada!"
+    },
+    "msgReverted": {
+        "message": "Estado revertido."
+    },
+    "msgResetDefaults": {
+        "message": "Restablecido a los valores predeterminados."
+    },
+    "lnkReportIssue": {
+        "message": "Informar de un problema"
+    }
+}

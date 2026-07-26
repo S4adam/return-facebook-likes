@@ -1,109 +1,409 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
-    <meta charset="utf-8" />
+    <meta charset="UTF-8" />
+    <title data-i18n="extSettingsTitle">Return Facebook Likes Settings</title>
     <style>
+      :root {
+        --primary-color: #2374e1;
+        --bg-color: #18191a;
+        --card-bg: #242526;
+        --text-color: #e4e6eb;
+        --text-secondary: #b0b3b8;
+        --border-color: #3e4042;
+        --danger-color: #ff4d4d;
+      }
+
       body {
-        width: 250px;
+        width: 320px;
         margin: 0;
         padding: 16px;
         font-family:
           -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
           Arial, sans-serif;
-        background-color: #ffffff;
-        color: #1c1e21;
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        color-scheme: dark;
       }
-      @media (prefers-color-scheme: dark) {
-        body {
-          background-color: #18191a;
-          color: #e4e6eb;
-        }
+
+      .card {
+        background-color: var(--card-bg);
+        border-radius: 8px;
+        padding: 16px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        margin-bottom: 12px;
+        border: 1px solid var(--border-color);
       }
-      h2 {
-        font-size: 14px;
-        margin: 0 0 8px 0;
-        font-weight: 700;
-      }
-      p {
-        font-size: 12px;
-        line-height: 1.4;
-        margin: 0 0 16px 0;
-        color: #65676b;
-      }
-      @media (prefers-color-scheme: dark) {
-        p {
-          color: #b0b3b8;
-        }
-      }
-      .status {
-        display: inline-flex;
+
+      .header-row {
+        display: flex;
         align-items: center;
-        gap: 6px;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+
+      h2 {
+        margin: 0;
+        font-size: 1rem;
         font-weight: 600;
-        color: #00a400;
-        font-size: 11px;
-        background-color: #eafbe7;
-        padding: 4px 8px;
-        border-radius: 12px;
+        color: var(--text-color);
+      }
+
+      .setting-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
         margin-bottom: 14px;
       }
-      @media (prefers-color-scheme: dark) {
-        .status {
-          background-color: #1a331a;
-          color: #31a24c;
-        }
+
+      .slider-row {
+        flex-direction: column;
+        align-items: stretch;
       }
-      .status-dot {
-        height: 6px;
-        width: 6px;
-        background-color: currentColor;
-        border-radius: 50%;
+
+      .slider-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+      }
+
+      .setting-row:last-child {
+        margin-bottom: 0;
+      }
+
+      label {
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--text-color);
+      }
+
+      .val-display {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .switch {
+        position: relative;
         display: inline-block;
+        width: 36px;
+        height: 20px;
       }
-      .footer {
-        border-top: 1px solid #ced0d4;
-        padding-top: 12px;
-        font-size: 11px;
-        line-height: 1.5;
+
+      .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
       }
-      @media (prefers-color-scheme: dark) {
-        .footer {
-          border-top: 1px solid #3e4042;
-        }
+
+      .slider-toggle {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #4e4f50;
+        transition: 0.2s;
+        border-radius: 20px;
       }
-      .link {
-        color: #0064d2;
+
+      .slider-toggle:before {
+        position: absolute;
+        content: "";
+        height: 14px;
+        width: 14px;
+        left: 3px;
+        bottom: 3px;
+        background-color: #e4e6eb;
+        transition: 0.2s;
+        border-radius: 50%;
+      }
+
+      input:checked + .slider-toggle {
+        background-color: var(--primary-color);
+      }
+
+      input:checked + .slider-toggle:before {
+        transform: translateX(16px);
+        background-color: #fff;
+      }
+
+      input[type="range"] {
+        appearance: none;
+        -webkit-appearance: none;
+        width: 100%;
+        background: transparent;
+      }
+
+      input[type="range"]::-webkit-slider-thumb {
+        appearance: none;
+        -webkit-appearance: none;
+        height: 16px;
+        width: 16px;
+        border-radius: 50%;
+        background: var(--primary-color);
+        cursor: pointer;
+        margin-top: -6px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+      }
+
+      input[type="range"]::-webkit-slider-runnable-track {
+        width: 100%;
+        height: 4px;
+        cursor: pointer;
+        background: #4e4f50;
+        border-radius: 4px;
+      }
+
+      input[type="range"]:focus {
+        outline: none;
+      }
+
+      .actions {
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+        margin-top: 16px;
+        align-items: center;
+      }
+
+      button {
+        padding: 8px 16px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        transition:
+          background-color 0.15s,
+          opacity 0.15s,
+          box-shadow 0.15s,
+          transform 0.15s;
+      }
+
+      .icon-button {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #3a3b3c;
+        color: var(--text-color);
+      }
+
+      .icon-button:hover {
+        background-color: #4e4f50;
+        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+      }
+
+      .icon-button svg {
+        width: 16px;
+        height: 16px;
+        fill: currentColor;
+      }
+
+      #extNameHeader {
+        background: linear-gradient(
+          135deg,
+          #70a7ff 0%,
+          #0099ff 50%,
+          #00c6ff 100%
+        );
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        color: transparent;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+      }
+
+      #saveBtn {
+        background-color: var(--primary-color);
+        color: #fff;
+      }
+
+      #saveBtn:not(:disabled):hover {
+        background-color: #1a64c5;
+      }
+
+      #revertBtn {
+        background-color: #3a3b3c;
+        color: var(--text-color);
+      }
+
+      #revertBtn:not(:disabled):hover {
+        background-color: #4e4f50;
+      }
+
+      button:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+
+      #statusMsg {
+        position: fixed;
+        bottom: 16px;
+        left: 50%;
+        transform: translateX(-50%) translateY(20px);
+        background-color: #2e7d32;
+        color: #ffffff;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        opacity: 0;
+        pointer-events: none;
+        transition:
+          transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+          opacity 0.25s ease;
+        white-space: nowrap;
+        z-index: 100;
+      }
+
+      #statusMsg.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+
+      .footer-links {
+        margin-top: 20px;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .footer-text {
+        color: var(--text-secondary);
+        font-size: 0.75rem;
+      }
+
+      .github-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--text-color);
+        font-size: 0.8rem;
+        font-weight: 500;
         text-decoration: none;
-        font-weight: 600;
+        background-color: #3a3b3c;
+        padding: 6px 12px;
+        border-radius: 6px;
+        transition: background-color 0.15s;
       }
-      @media (prefers-color-scheme: dark) {
-        .link {
-          color: #2e89ff;
-        }
-      }
-      .link:hover {
-        text-decoration: underline;
+
+      .github-link:hover {
+        background-color: #4e4f50;
       }
     </style>
   </head>
   <body>
-    <h2>Return Facebook Likes</h2>
-    <div class="status">
-      <span class="status-dot"></span>
-      Active on Facebook
+    <div class="card">
+      <div class="header-row">
+        <h2 id="extNameHeader" data-i18n="extName">Return Facebook Likes</h2>
+        <button
+          id="resetBtn"
+          class="icon-button"
+          title="Reset to defaults"
+          aria-label="Reset to defaults"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path
+              d="M12 5V2L7 7l5 5V9c3.31 0 6 2.69 6 6a6 6 0 0 1-6 6 6 6 0 0 1-5.65-4H4.26A8 8 0 0 0 12 23a8 8 0 0 0 8-8c0-4.42-3.58-8-8-8z"
+            />
+          </svg>
+        </button>
+      </div>
+
+      <div class="setting-row">
+        <label for="restoreCommentCounts" data-i18n="lblRestoreCounts"
+          >Restore Comment Counts</label
+        >
+        <label class="switch">
+          <input type="checkbox" id="restoreCommentCounts" />
+          <span class="slider-toggle"></span>
+        </label>
+      </div>
+
+      <div class="setting-row">
+        <label for="useExactNumbers" data-i18n="lblExactNumbers"
+          >Use Exact Numbers (19,269)</label
+        >
+        <label class="switch">
+          <input type="checkbox" id="useExactNumbers" />
+          <span class="slider-toggle"></span>
+        </label>
+      </div>
+
+      <hr
+        style="
+          border: 0;
+          border-top: 1px solid var(--border-color);
+          margin: 16px 0;
+        "
+      />
+
+      <div class="setting-row slider-row">
+        <div class="slider-header">
+          <label for="commentFontSize" data-i18n="lblFontSize">Font Size</label>
+          <span class="val-display" id="fontSizeVal">0.81rem</span>
+        </div>
+        <input
+          type="range"
+          id="commentFontSize"
+          min="0.70"
+          max="1.00"
+          step="0.01"
+        />
+      </div>
+
+      <div class="setting-row slider-row">
+        <div class="slider-header">
+          <label for="commentFontWeight" data-i18n="lblFontWeight"
+            >Font Weight</label
+          >
+          <span class="val-display" id="fontWeightVal">600</span>
+        </div>
+        <input
+          type="range"
+          id="commentFontWeight"
+          min="400"
+          max="700"
+          step="100"
+        />
+      </div>
     </div>
-    <p>
-      Here to restore comment reaction counts without the need for you to hover
-      over them!:)
-    </p>
-    <div class="footer">
-      Facing issues or has Facebook updated?<br />
-      <a
-        href="https://github.com/S4adam/return-facebook-likes"
-        target="_blank"
-        class="link"
-        >Report on GitHub</a
+
+    <div class="actions">
+      <button id="revertBtn" data-i18n="btnRevert" disabled>Revert</button>
+      <button id="saveBtn" data-i18n="btnSave" disabled>Save</button>
+    </div>
+
+    <div id="statusMsg"></div>
+
+    <div class="footer-links">
+      <span class="footer-text" data-i18n="lblHavingTrouble"
+        >Having trouble?</span
       >
+      <a
+        href="https://github.com/S4adam/return-facebook-likes/issues"
+        target="_blank"
+        class="github-link"
+      >
+        <svg height="16" width="16" viewBox="0 0 16 16" fill="currentColor">
+          <path
+            d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"
+          ></path>
+        </svg>
+        <span data-i18n="lnkReportIssue">Report an Issue</span>
+      </a>
     </div>
+
+    <script src="popup.js"></script>
   </body>
 </html>
